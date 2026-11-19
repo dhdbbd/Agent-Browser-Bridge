@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZCodeProject / browser-ext</title>
+<style>
+  :root{
+    --bg:#fff; --subtle:#f6f8fa; --border:#d0d7de; --border-muted:#d8dee4;
+    --fg:#1f2328; --muted:#656d76; --accent:#0969da;
+    --success:#1a7f37; --success-bg:#dafbe1; --done:#8250df;
+    --header-bg:#24292f; --code-bg:rgba(175,184,193,.2);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .topbar{background:var(--header-bg);color:#fff;height:62px;display:flex;align-items:center;gap:16px;padding:0 32px}
+  .mark{font-size:26px;line-height:1}
+  .searchbox{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 12px;color:#a9b1ba;width:280px;font-size:12px}
+  .topnav{margin-left:auto;display:flex;gap:18px;font-size:13px;color:#d0d7de}
+  .topnav .dotsep{width:1px;height:18px;background:rgba(255,255,255,.25);align-self:center}
+
+  .repohead{padding:16px 32px 0;border-bottom:1px solid var(--border)}
+  .repotitle{display:flex;align-items:center;gap:8px;font-size:20px}
+  .repotitle .owner{color:var(--accent)}
+  .repotitle .slash{color:var(--muted);font-size:18px}
+  .repotitle .name{color:var(--accent);font-weight:600}
+  .public{border:1px solid var(--border);border-radius:2em;padding:0 7px;font-size:12px;color:var(--muted);line-height:20px}
+  .repoacts{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px}
+  .btn{border:1px solid var(--border);background:var(--subtle);color:var(--fg);border-radius:6px;padding:4px 12px;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+  .btn .cnt{color:var(--muted)}
+  .btn.primary{background:#1f883d;border-color:rgba(31,136,61,.4);color:#fff}
+  .btn.primary .cnt{color:rgba(255,255,255,.8)}
+
+  .tabs{display:flex;gap:2px;margin-top:14px;font-size:13px}
+  .tab{padding:8px 12px;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px}
+  .tab.on{border-bottom-color:#fd8c73;font-weight:600}
+  .tab .ico{opacity:.7;font-size:13px}
+  .counter{background:var(--subtle);border:1px solid var(--border);border-radius:2em;padding:0 6px;font-size:11px;color:var(--muted)}
+
+  .main{display:grid;grid-template-columns:296px 1fr;gap:24px;padding:24px 32px 60px;max-width:1440px;margin:0 auto}
+  .panel{border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px;background:#fff}
+  .panel-head{background:var(--subtle);border-bottom:1px solid var(--border);padding:10px 14px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .panel-head .sub{color:var(--muted);font-weight:400}
+
+  .filerow{display:flex;align-items:center;gap:7px;padding:7px 14px;border-bottom:1px solid var(--border-muted);font-size:13px}
+  .filerow:last-child{border-bottom:none}
+  .filerow.dir{font-weight:600}
+  .fico{width:15px;text-align:center;opacity:.7}
+  .msg{margin-left:auto;color:var(--muted);font-size:11.5px;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ind1{padding-left:30px}
+
+  .abouttext{margin:12px 14px 8px;font-size:13px;color:var(--muted);line-height:1.6}
+  .topics{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 14px}
+  .topic{background:#ddf4ff;color:#0969da;border-radius:2em;padding:1px 9px;font-size:11.5px}
+  .metarow{display:flex;justify-content:space-between;padding:7px 14px;border-top:1px solid var(--border-muted);font-size:12.5px;color:var(--muted)}
+  .metarow b{color:var(--fg);font-weight:600}
+
+  .readme-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--subtle);border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0;font-size:12px;color:var(--muted)}
+  .readme-bar b{color:var(--fg)}
+  .readme{border:1px solid var(--border);border-radius:0 0 6px 6px;padding:34px 44px 44px;font-size:15px;line-height:1.7}
+  .readme h1{font-size:31px;font-weight:600;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--border-muted)}
+  .readme h2{font-size:21px;font-weight:600;margin:32px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border-muted)}
+  .readme h3{font-size:16px;margin:22px 0 8px}
+  .readme p{margin:0 0 14px}
+  .readme ul,.readme ol{margin:0 0 14px;padding-left:26px}
+  .readme li{margin:5px 0}
+  .readme code{background:var(--code-bg);border-radius:6px;padding:2px 6px;font:12.5px/1.5 ui-monospace,SFMono-Regular,"Cascadia Code",Consolas,monospace}
+  .readme pre{background:var(--subtle);border:1px solid var(--border-muted);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:0 0 16px}
+  .readme pre code{background:none;padding:0;font-size:12.5px}
+  .readme blockquote{margin:0 0 16px;padding:0 16px;color:var(--muted);border-left:3px solid var(--border)}
+  .readme table{border-collapse:collapse;width:100%;margin:0 0 16px;font-size:13.5px}
+  .readme th,.readme td{border:1px solid var(--border);padding:7px 12px;text-align:left;vertical-align:top}
+  .readme th{background:var(--subtle);font-weight:600}
+  .readme hr{border:none;border-top:1px solid var(--border);margin:28px 0}
+
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+  .sh{display:inline-flex;border-radius:4px;overflow:hidden;font:600 11px/20px -apple-system,"Segoe UI",sans-serif;color:#fff}
+  .sh .l{background:#555;padding:0 7px}
+  .sh .r{padding:0 7px;background:#1f883d}
+  .sh .r.b{background:#0969da}
+  .sh .r.g{background:#6e7781}
+  .sh .r.p{background:#8250df}
+
+  .note{border-left:4px solid #d4a72c;background:#fff8c5;padding:12px 16px;border-radius:4px;margin:0 0 16px;font-size:13.5px}
+  .note.blue{border-left-color:#0969da;background:#ddf4ff}
+  .note strong{display:block;margin-bottom:2px}
+
+  .steps{counter-reset:s;list-style:none;padding-left:0}
+  .steps>li{counter-increment:s;position:relative;padding:14px 16px 14px 54px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:#fff}
+  .steps>li::before{content:counter(s);position:absolute;left:14px;top:14px;width:25px;height:25px;border-radius:50%;background:var(--success-bg);color:var(--success);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12.5px}
+  .steps>li b{display:block;margin-bottom:2px;font-size:14.5px}
+  .steps>li span{color:var(--muted);font-size:13.5px}
+
+  .muted{color:var(--muted)}
+  .small{font-size:12.5px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="mark">◉</span>
+  <span class="searchbox">Type / to search</span>
+  <div class="topnav">
+    <span>Pull requests</span><span>Issues</span><span>Marketplace</span><span>Explore</span>
+    <span class="dotsep"></span><span>＋</span><span>▾</span>
+  </div>
+</div>
+
+<div class="repohead">
+  <div class="repotitle">
+    <span style="font-size:17px;opacity:.75">▤</span>
+    <span class="owner">ZCodeProject</span>
+    <span class="slash">/</span>
+    <span class="name">browser-ext</span>
+    <span class="public">Public</span>
+    <div class="repoacts">
+      <span class="btn">⚑ Watch <span class="cnt">12</span></span>
+      <span class="btn">⑂ Fork <span class="cnt">8</span></span>
+      <span class="btn">☆ Star <span class="cnt">168</span></span>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab on"><span class="ico">◈</span> Code</div>
+    <div class="tab"><span class="ico">◎</span> Issues <span class="counter">4</span></div>
+    <div class="tab"><span class="ico">⇄</span> Pull requests <span class="counter">1</span></div>
+    <div class="tab"><span class="ico">▷</span> Actions</div>
+    <div class="tab"><span class="ico">▦</span> Projects</div>
+    <div class="tab"><span class="ico">▤</span> Wiki</div>
+    <div class="tab"><span class="ico">⛨</span> Security</div>
+    <div class="tab"><span class="ico">▨</span> Insights</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ===== 左列 ===== -->
+  <div>
+    <div class="panel">
+      <div class="panel-head"><span>main ▾</span><span class="sub">1 Branch · 3 Tags</span></div>
+      <div class="filerow dir"><span class="fico">▸</span> extension <span class="msg">side panel + agent</span></div>
+      <div class="filerow ind1"><span class="fico">▸</span> icons <span class="msg">icon set</span></div>
+      <div class="filerow ind1"><span class="fico">{}</span> manifest.json <span class="msg">MV3 manifest</span></div>
+      <div class="filerow ind1"><span class="fico">{ }</span> background.js <span class="msg">long-poll + commands</span></div>
+      <div class="filerow ind1"><span class="fico">{ }</span> content.js <span class="msg">floating launcher</span></div>
+      <div class="filerow ind1"><span class="fico">◇</span> sidepanel.html <span class="msg">chat UI</span></div>
+      <div class="filerow ind1"><span class="fico">{ }</span> sidepanel.js <span class="msg">event stream</span></div>
+      <div class="filerow dir"><span class="fico">▸</span> bridge <span class="msg">local bridge</span></div>
+      <div class="filerow ind1"><span class="fico">{ }</span> server.mjs <span class="msg">MCP + HTTP</span></div>
+      <div class="filerow ind1"><span class="fico">{ }</span> hook-inbox.mjs <span class="msg">prompt hook</span></div>
+      <div class="filerow dir"><span class="fico">▸</span> tools <span class="msg">smoke tests</span></div>
+      <div class="filerow"><span class="fico">{ }</span> install.mjs <span class="msg">one-shot installer</span></div>
+      <div class="filerow"><span class="fico">▤</span> README.md <span class="msg">docs</span></div>
+      <div class="filerow"><span class="fico">⚖</span> LICENSE <span class="msg">MIT</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">About</div>
+      <div class="abouttext">
+        让 AI 直接操作你正在用的浏览器：扩展装在浏览器里，登录状态、书签、插件都在，
+        AI 能看清当前网页、帮你点按钮填表单，每一步都显示在右侧面板里。
+      </div>
+      <div class="topics">
+        <span class="topic">browser-automation</span>
+        <span class="topic">chrome-extension</span>
+        <span class="topic">edge-extension</span>
+        <span class="topic">mcp</span>
+        <span class="topic">zcode</span>
+      </div>
+      <div class="metarow"><span>README</span><b>MIT license</b></div>
+      <div class="metarow"><span>Activity</span><b>168 stars</b></div>
+      <div class="metarow"><span>Releases</span><b>3</b></div>
+      <div class="metarow"><span>Protocol</span><b>v2</b></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">Releases <span class="sub">Latest</span></div>
+      <div style="padding:12px 14px">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+          <span style="background:var(--success);color:#fff;border-radius:2em;padding:0 8px;font-size:11px;font-weight:600;line-height:19px">Latest</span>
+          <b style="font-size:13.5px">v1.0.0</b>
+        </div>
+        <div class="muted small">2026-11-19 · 首个稳定版</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">Languages</div>
+      <div style="padding:12px 14px">
+        <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:8px">
+          <div style="width:76%;background:#f1e05a"></div>
+          <div style="width:16%;background:#e34c26"></div>
+          <div style="width:8%;background:#563d7c"></div>
+        </div>
+        <div class="small"><span style="color:#f1e05a">●</span> JavaScript 76% · <span style="color:#e34c26">●</span> HTML 16% · <span style="color:#563d7c">●</span> CSS 8%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== README（技术文档） ===== -->
+  <div>
+    <div class="readme-bar">
+      <b>README.md</b>
+      <span style="margin-left:auto">214 lines (158 loc) · 8.4 KB</span>
+    </div>
+
+    <div class="readme">
+
+      <h1>ZCode Browser Bridge</h1>
+
+      <div class="badges">
+        <span class="sh"><span class="l">version</span><span class="r">v1.0.0</span></span>
+        <span class="sh"><span class="l">manifest</span><span class="r b">MV3</span></span>
+        <span class="sh"><span class="l">protocol</span><span class="r p">v2</span></span>
+        <span class="sh"><span class="l">platform</span><span class="r b">Edge 114+ / Chrome 114+</span></span>
+        <span class="sh"><span class="l">license</span><span class="r g">MIT</span></span>
+      </div>
+
+      <p>把浏览器变成 AI 的手和眼。通过 MV3 扩展 + 本地桥接服务，ZCode 可以直接操作你当前
+      profile 里的标签页：读页面、点元素、填表单、截图 —— 不需要 CDP，不需要另开浏览器，
+      也不需要重新登录。</p>
+
+      <h2>Why not CDP</h2>
+
+      <blockquote>
+        Chrome 137+ 禁止对默认 <code>user-data-dir</code> 开放 <code>--remote-debugging-port</code>
+        （防止恶意程序借调试端口窃取 cookie）。走 CDP 只能指定新的 user-data-dir，等于每次都要
+        重新登录。
+      </blockquote>
+
+      <p>扩展是浏览器内部组件，用 <code>chrome.scripting</code> 直接操作当前 profile，天然持有登录态。
+      代价是缺少网络拦截、任意 JS 求值等能力（见 <a href="#">Known limitations</a>）。</p>
+
+      <table>
+        <thead><tr><th></th><th>CDP backend</th><th>This extension</th></tr></thead>
+        <tbody>
+          <tr><td>独立浏览器实例</td><td>必需</td><td>不需要</td></tr>
+          <tr><td>登录态 / cookie</td><td>空白 profile</td><td>当前 profile</td></tr>
+          <tr><td>「正在控制」提示条</td><td>有</td><td>无</td></tr>
+          <tr><td><code>navigator.webdriver</code></td><td>可见</td><td>无</td></tr>
+          <tr><td>Network / Console 拦截</td><td>完整</td><td>仅 console 钩子</td></tr>
+          <tr><td>任意 JS 求值</td><td>支持</td><td>MV3 CSP 禁止</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Quick start</h2>
+
+      <ol class="steps">
+        <li>
+          <b>Clone &amp; place</b>
+          <span>放到固定路径，例如 <code>D:\Tools\browser-ext</code>。</span>
+        </li>
+        <li>
+          <b>Load unpacked extension</b>
+          <span><code>edge://extensions</code> → 开启开发人员模式 → 加载已解压的扩展 → 选 <code>extension/</code>。</span>
+        </li>
+        <li>
+          <b>Run installer</b>
+          <span>生成 token、注册 MCP server、配置开机自启。</span>
+        </li>
+      </ol>
+
+      <pre><code>node install.mjs</code></pre>
+
+      <div class="note blue">
+        <strong>安装后重启浏览器与 ZCode</strong>
+        扩展会以 <code>--serve-only</code> 模式常驻桥接服务；ZCode 会话内的 MCP 进程检测到端口
+        已占用时自动降级为 proxy 模式，多会话共享同一个桥。
+      </div>
+
+      <h2>Tools</h2>
+
+      <p>桥在 stdio 上暴露 MCP server，模型侧看到 15 个工具：</p>
+
+      <table>
+        <thead><tr><th>Tool</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>browser_status</code></td><td>连接状态、协议版本、标签列表、锁定状态</td></tr>
+          <tr><td><code>browser_tabs</code></td><td>列出可操作标签（过滤受保护页面）</td></tr>
+          <tr><td><code>browser_open</code></td><td>打开 / 复用 URL，支持浏览器内部页</td></tr>
+          <tr><td><code>browser_snapshot</code></td><td>页面文本化：标题、URL、滚动、ref 编号元素、正文</td></tr>
+          <tr><td><code>browser_click</code></td><td>按 ref 点击（指针事件序列 + 原生 click 兜底）</td></tr>
+          <tr><td><code>browser_type</code></td><td>输入文本，兼容 React/Vue 受控组件，可提交</td></tr>
+          <tr><td><code>browser_select</code></td><td>下拉框按 value / 文本选择</td></tr>
+          <tr><td><code>browser_press</code></td><td>按键组合</td></tr>
+          <tr><td><code>browser_scroll</code></td><td>滚动或滚动到元素</td></tr>
+          <tr><td><code>browser_wait</code></td><td>等待文本 / 选择器出现</td></tr>
+          <tr><td><code>browser_screenshot</code></td><td>可视区截图（PNG）</td></tr>
+          <tr><td><code>browser_hooks</code></td><td>页面钩子状态 + 被拦截弹窗 + 最近 console</td></tr>
+          <tr><td><code>browser_eval</code></td><td>受限：MV3 隔离世界禁止 eval</td></tr>
+          <tr><td><code>browser_inbox</code></td><td>读侧栏指令队列</td></tr>
+          <tr><td><code>browser_reply</code></td><td>把回复写入侧栏事件流</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Architecture</h2>
+
+      <pre><code>extension/                     MV3 扩展
+├── background.js             长轮询 /poll、命令执行、主世界钩子注入
+├── content.js                页面悬浮按钮（Shadow DOM，可拖动）
+├── sidepanel.html            侧栏聊天 UI（跟随系统主题）
+└── sidepanel.js              事件流渲染、锁定开关
+
+bridge/
+├── server.mjs                MCP stdio + HTTP 桥（单进程双职责）
+└── hook-inbox.mjs            UserPromptSubmit hook</code></pre>
+
+      <p>数据流：</p>
+
+      <pre><code>侧栏输入 ──POST /inbox──▶ 桥 ──spawn──▶ headless ZCode 会话
+                            │                    │
+                            │◀──── MCP tools ────┘
+                            │
+                     事件流 /events ──push──▶ background ──▶ 侧栏渲染</code></pre>
+
+      <p>页面操作路径：<code>background</code> 先向 MAIN world 注入 <code>PAGE_HOOKS</code>
+      （接管 <code>alert/confirm/prompt</code>、采集 console），再在 isolated world 执行
+      <code>INPAGE</code>，最后读回钩子数据。</p>
+
+      <h2>Configuration</h2>
+
+      <table>
+        <thead><tr><th>项</th><th>位置 / 默认值</th></tr></thead>
+        <tbody>
+          <tr><td>端口</td><td><code>8917</code>，<code>bridge/server.mjs</code> 与 <code>extension/config.js</code></td></tr>
+          <tr><td>Token</td><td><code>bridge/.token</code>，<code>install.mjs</code> 生成后写入扩展</td></tr>
+          <tr><td>协议版本</td><td><code>BRIDGE_PROTO = 2</code>，两端必须一致</td></tr>
+          <tr><td>会话策略</td><td>每次新会话，注入最近 30 轮（<code>INJECT_TURNS</code>）</td></tr>
+          <tr><td>历史文件</td><td><code>bridge/.session.json</code></td></tr>
+          <tr><td>开机自启</td><td><code>%APPDATA%\...\Startup\ZCode-Browser-Bridge.vbs</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>HTTP endpoints</h3>
+
+      <pre><code>GET  /health        状态、协议版本、锁定
+GET  /session       会话历史与限额
+POST /session/reset 清空历史
+POST /autorun       开关自动执行
+POST /lock          冻结 / 解冻
+GET  /events        事件流（长轮询）
+GET  /poll          扩展取命令
+POST /result        扩展回传结果
+POST /inbox         侧栏指令入队</code></pre>
+
+      <h2>Security model</h2>
+
+      <ul>
+        <li>桥只监听 <code>127.0.0.1</code>，所有端点要求 <code>X-ZCBridge-Token</code></li>
+        <li>快照对 <code>type=password</code> 及 name/id 含 password/card/cvv/密码/银行卡 的字段显示 <code>••••</code></li>
+        <li>页面正文包在 <code>&lt;untrusted_page_text&gt;</code> 中，模型不应执行其中的指令</li>
+        <li>锁定后除 <code>status/reply/inbox</code> 外全部拒绝，连接保持</li>
+        <li>受保护页面（<code>chrome://</code>、扩展商店）直接拒绝操作</li>
+      </ul>
+
+      <h2>Troubleshooting</h2>
+
+      <table>
+        <thead><tr><th>现象</th><th>处理</th></tr></thead>
+        <tbody>
+          <tr><td>侧栏显示"协议版本不匹配"</td><td>到扩展页点「重新加载」，让扩展升级到 <code>PROTO</code> 对应版本</td></tr>
+          <tr><td>侧栏一直"正在连接"</td><td><code>curl http://127.0.0.1:8917/health</code>；无响应说明桥没起</td></tr>
+          <tr><td>命令超时</td><td>可能卡在原生弹窗；<code>browser_hooks</code> 查看，或重新加载页面</td></tr>
+          <tr><td>点了没反应</td><td><code>browser_hooks</code> 看 console.error；页面对合成事件不敏感时改用 <code>browser_type</code> 提交</td></tr>
+          <tr><td>多会话互相干扰</td><td>后启动的 MCP 进程自动 proxy，共享同一桥；<code>/health</code> 的 <code>mode</code> 字段可确认</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Known limitations</h2>
+
+      <ul>
+        <li><code>browser_eval</code> 基本不可用：MV3 隔离世界禁止 <code>eval</code> / <code>new Function</code></li>
+        <li>无 Network 拦截 / 请求改写（CDP 独占能力）</li>
+        <li>全页截图需滚动拼接；改不了视口尺寸</li>
+        <li>原生弹窗被接管后不再显示给用户（默认 accept）</li>
+        <li>合成事件 <code>isTrusted=false</code>，极少数强校验页面会拒绝</li>
+        <li>无法操作 <code>chrome://</code>、扩展商店等受保护页面</li>
+      </ul>
+
+      <h2>License</h2>
+
+      <p>MIT。仅供个人与团队内部使用，请遵守所在环境的 IT 规定。</p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const off = new URLSearchParams(location.search).get("offset");
+  if (off) {
+    document.documentElement.style.marginTop = "-" + off + "px";
+    const t = document.querySelector(".topbar");
+    if (t) t.style.display = "none";
+  }
+</script>
+</body>
+</html>
