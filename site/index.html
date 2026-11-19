@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ZCodeProject / browser-ext</title>
+<title>Agent Browser Bridge / browser-ext</title>
 <style>
   :root{
     --bg:#fff; --subtle:#f6f8fa; --border:#d0d7de; --border-muted:#d8dee4;
@@ -116,9 +116,9 @@
 <div class="repohead">
   <div class="repotitle">
     <span style="font-size:17px;opacity:.75">▤</span>
-    <span class="owner">ZCodeProject</span>
+    <span class="owner">dhdbbd</span>
     <span class="slash">/</span>
-    <span class="name">browser-ext</span>
+    <span class="name">Agent-Browser-Bridge</span>
     <span class="public">Public</span>
     <div class="repoacts">
       <span class="btn">⚑ Watch <span class="cnt">12</span></span>
@@ -165,13 +165,14 @@
       <div class="abouttext">
         让 AI 直接操作你正在用的浏览器：扩展装在浏览器里，登录状态、书签、插件都在，
         AI 能看清当前网页、帮你点按钮填表单，每一步都显示在右侧面板里。
+        标准 MCP 接口，接到你自己的 Agent 就能用。
       </div>
       <div class="topics">
         <span class="topic">browser-automation</span>
         <span class="topic">chrome-extension</span>
         <span class="topic">edge-extension</span>
         <span class="topic">mcp</span>
-        <span class="topic">zcode</span>
+        <span class="topic">ai-agent</span>
       </div>
       <div class="metarow"><span>README</span><b>MIT license</b></div>
       <div class="metarow"><span>Activity</span><b>168 stars</b></div>
@@ -184,9 +185,9 @@
       <div style="padding:12px 14px">
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
           <span style="background:var(--success);color:#fff;border-radius:2em;padding:0 8px;font-size:11px;font-weight:600;line-height:19px">Latest</span>
-          <b style="font-size:13.5px">v1.0.0</b>
+          <b style="font-size:13.5px">v1.1.0</b>
         </div>
-        <div class="muted small">2026-11-19 · 首个稳定版</div>
+        <div class="muted small">2026-11-19 · MCP 通用接口 · 小白安装指南</div>
       </div>
     </div>
 
@@ -212,180 +213,117 @@
 
     <div class="readme">
 
-      <h1>ZCode Browser Bridge</h1>
+      <h1>Agent Browser Bridge · 让 AI 操控你自己的浏览器</h1>
 
       <div class="badges">
-        <span class="sh"><span class="l">version</span><span class="r">v1.0.0</span></span>
+        <span class="sh"><span class="l">version</span><span class="r">v1.1.0</span></span>
         <span class="sh"><span class="l">manifest</span><span class="r b">MV3</span></span>
-        <span class="sh"><span class="l">protocol</span><span class="r p">v2</span></span>
+        <span class="sh"><span class="l">interface</span><span class="r p">MCP</span></span>
         <span class="sh"><span class="l">platform</span><span class="r b">Edge 114+ / Chrome 114+</span></span>
         <span class="sh"><span class="l">license</span><span class="r g">MIT</span></span>
       </div>
 
-      <p>把浏览器变成 AI 的手和眼。通过 MV3 扩展 + 本地桥接服务，ZCode 可以直接操作你当前
-      profile 里的标签页：读页面、点元素、填表单、截图 —— 不需要 CDP，不需要另开浏览器，
-      也不需要重新登录。</p>
+      <div class="note blue">
+        <strong>一句话：装一个浏览器扩展，AI 就能替你在你自己的浏览器里干活</strong>
+        你平时怎么用浏览器，装完后还是怎么用——AI 能看到的网页就是你能看到的网页，
+        你登录过的网站 AI 直接就能操作，不用重新登录。
+      </div>
 
-      <h2>Why not CDP</h2>
+      <h2>它到底能干嘛？（举几个例子）</h2>
 
-      <blockquote>
-        Chrome 137+ 禁止对默认 <code>user-data-dir</code> 开放 <code>--remote-debugging-port</code>
-        （防止恶意程序借调试端口窃取 cookie）。走 CDP 只能指定新的 user-data-dir，等于每次都要
-        重新登录。
-      </blockquote>
+      <ul>
+        <li>「看一下我今天有几条待办，都念给我听」—— AI 打开你的待办页面，读取并汇报</li>
+        <li>「帮我把这个报销表填了，金额按昨天说的」—— AI 在页面上逐项填写，你最后点提交</li>
+        <li>「把这个页面的商品截图发给我」—— AI 截图当前页面给你看</li>
+        <li>「盯着这个页面，价格变了告诉我」—— AI 定期读取页面内容</li>
+      </ul>
 
-      <p>扩展是浏览器内部组件，用 <code>chrome.scripting</code> 直接操作当前 profile，天然持有登录态。
-      代价是缺少网络拦截、任意 JS 求值等能力（见 <a href="#">Known limitations</a>）。</p>
+      <p>AI 的每一步操作都会显示在浏览器右侧的小面板里，<b>它做了什么你看得一清二楚</b>。
+      面板上还有一个「锁定」按钮，点一下 AI 立刻失去操作权限。</p>
 
-      <table>
-        <thead><tr><th></th><th>CDP backend</th><th>This extension</th></tr></thead>
-        <tbody>
-          <tr><td>独立浏览器实例</td><td>必需</td><td>不需要</td></tr>
-          <tr><td>登录态 / cookie</td><td>空白 profile</td><td>当前 profile</td></tr>
-          <tr><td>「正在控制」提示条</td><td>有</td><td>无</td></tr>
-          <tr><td><code>navigator.webdriver</code></td><td>可见</td><td>无</td></tr>
-          <tr><td>Network / Console 拦截</td><td>完整</td><td>仅 console 钩子</td></tr>
-          <tr><td>任意 JS 求值</td><td>支持</td><td>MV3 CSP 禁止</td></tr>
-        </tbody>
-      </table>
-
-      <h2>Quick start</h2>
+      <h2>3 步装好（全程约 10 分钟，不需要会编程）</h2>
 
       <ol class="steps">
         <li>
-          <b>Clone &amp; place</b>
-          <span>放到固定路径，例如 <code>D:\Tools\browser-ext</code>。</span>
+          <b>下载并解压</b>
+          <span>点本页上方绿色 <code>Code</code> 按钮 → <code>Download ZIP</code>，解压到一个<b>固定的文件夹</b>（别放「下载」或「临时」目录，删了就失效）。</span>
         </li>
         <li>
-          <b>Load unpacked extension</b>
-          <span><code>edge://extensions</code> → 开启开发人员模式 → 加载已解压的扩展 → 选 <code>extension/</code>。</span>
+          <b>把安装文档丢给 AI</b>
+          <span>打开项目里的 <code>INSTALL.md</code>，全选复制，粘贴给你的 AI（ZCode / Claude / Cursor 等都行），说：「帮我按这个文档安装」。</span>
         </li>
         <li>
-          <b>Run installer</b>
-          <span>生成 token、注册 MCP server、配置开机自启。</span>
+          <b>手动加载一下扩展</b>
+          <span>浏览器安全限制，这步必须自己点（就 4 下）：地址栏输入 <code>chrome://extensions</code> 或 <code>edge://extensions</code> → 打开「开发者模式」→ 点「加载已解压的扩展程序」→ 选 <code>extension</code> 文件夹。</span>
         </li>
       </ol>
 
-      <pre><code>node install.mjs</code></pre>
-
-      <div class="note blue">
-        <strong>安装后重启浏览器与 ZCode</strong>
-        扩展会以 <code>--serve-only</code> 模式常驻桥接服务；ZCode 会话内的 MCP 进程检测到端口
-        已占用时自动降级为 proxy 模式，多会话共享同一个桥。
+      <div class="note">
+        <strong>装好后怎么确认成功了？</strong>
+        随便打开一个网页，右侧边缘出现一个悬浮按钮，点开面板、顶部圆点变<b>绿色</b>，就成了。
+        然后对 AI 说一句「检查浏览器连接」试试。
       </div>
 
-      <h2>Tools</h2>
+      <h2>这个项目和我们自己的 AI（ZCode）是什么关系？</h2>
 
-      <p>桥在 stdio 上暴露 MCP server，模型侧看到 15 个工具：</p>
-
-      <table>
-        <thead><tr><th>Tool</th><th>说明</th></tr></thead>
-        <tbody>
-          <tr><td><code>browser_status</code></td><td>连接状态、协议版本、标签列表、锁定状态</td></tr>
-          <tr><td><code>browser_tabs</code></td><td>列出可操作标签（过滤受保护页面）</td></tr>
-          <tr><td><code>browser_open</code></td><td>打开 / 复用 URL，支持浏览器内部页</td></tr>
-          <tr><td><code>browser_snapshot</code></td><td>页面文本化：标题、URL、滚动、ref 编号元素、正文</td></tr>
-          <tr><td><code>browser_click</code></td><td>按 ref 点击（指针事件序列 + 原生 click 兜底）</td></tr>
-          <tr><td><code>browser_type</code></td><td>输入文本，兼容 React/Vue 受控组件，可提交</td></tr>
-          <tr><td><code>browser_select</code></td><td>下拉框按 value / 文本选择</td></tr>
-          <tr><td><code>browser_press</code></td><td>按键组合</td></tr>
-          <tr><td><code>browser_scroll</code></td><td>滚动或滚动到元素</td></tr>
-          <tr><td><code>browser_wait</code></td><td>等待文本 / 选择器出现</td></tr>
-          <tr><td><code>browser_screenshot</code></td><td>可视区截图（PNG）</td></tr>
-          <tr><td><code>browser_hooks</code></td><td>页面钩子状态 + 被拦截弹窗 + 最近 console</td></tr>
-          <tr><td><code>browser_eval</code></td><td>受限：MV3 隔离世界禁止 eval</td></tr>
-          <tr><td><code>browser_inbox</code></td><td>读侧栏指令队列</td></tr>
-          <tr><td><code>browser_reply</code></td><td>把回复写入侧栏事件流</td></tr>
-        </tbody>
-      </table>
-
-      <h2>Architecture</h2>
-
-      <pre><code>extension/                     MV3 扩展
-├── background.js             长轮询 /poll、命令执行、主世界钩子注入
-├── content.js                页面悬浮按钮（Shadow DOM，可拖动）
-├── sidepanel.html            侧栏聊天 UI（跟随系统主题）
-└── sidepanel.js              事件流渲染、锁定开关
-
-bridge/
-├── server.mjs                MCP stdio + HTTP 桥（单进程双职责）
-└── hook-inbox.mjs            UserPromptSubmit hook</code></pre>
-
-      <p>数据流：</p>
-
-      <pre><code>侧栏输入 ──POST /inbox──▶ 桥 ──spawn──▶ headless ZCode 会话
-                            │                    │
-                            │◀──── MCP tools ────┘
-                            │
-                     事件流 /events ──push──▶ background ──▶ 侧栏渲染</code></pre>
-
-      <p>页面操作路径：<code>background</code> 先向 MAIN world 注入 <code>PAGE_HOOKS</code>
-      （接管 <code>alert/confirm/prompt</code>、采集 console），再在 isolated world 执行
-      <code>INPAGE</code>，最后读回钩子数据。</p>
-
-      <h2>Configuration</h2>
-
-      <table>
-        <thead><tr><th>项</th><th>位置 / 默认值</th></tr></thead>
-        <tbody>
-          <tr><td>端口</td><td><code>8917</code>，<code>bridge/server.mjs</code> 与 <code>extension/config.js</code></td></tr>
-          <tr><td>Token</td><td><code>bridge/.token</code>，<code>install.mjs</code> 生成后写入扩展</td></tr>
-          <tr><td>协议版本</td><td><code>BRIDGE_PROTO = 2</code>，两端必须一致</td></tr>
-          <tr><td>会话策略</td><td>每次新会话，注入最近 30 轮（<code>INJECT_TURNS</code>）</td></tr>
-          <tr><td>历史文件</td><td><code>bridge/.session.json</code></td></tr>
-          <tr><td>开机自启</td><td><code>%APPDATA%\...\Startup\ZCode-Browser-Bridge.vbs</code></td></tr>
-        </tbody>
-      </table>
-
-      <h3>HTTP endpoints</h3>
-
-      <pre><code>GET  /health        状态、协议版本、锁定
-GET  /session       会话历史与限额
-POST /session/reset 清空历史
-POST /autorun       开关自动执行
-POST /lock          冻结 / 解冻
-GET  /events        事件流（长轮询）
-GET  /poll          扩展取命令
-POST /result        扩展回传结果
-POST /inbox         侧栏指令入队</code></pre>
-
-      <h2>Security model</h2>
+      <p>这个项目<b>原本是我们为自己的 AI Agent「ZCode」做的</b>——所以你会在代码和界面里看到一些 ZCode 的痕迹，
+      那是历史原因。但项目本身是通用的「AI ↔ 浏览器」连接桥：</p>
 
       <ul>
-        <li>桥只监听 <code>127.0.0.1</code>，所有端点要求 <code>X-ZCBridge-Token</code></li>
-        <li>快照对 <code>type=password</code> 及 name/id 含 password/card/cvv/密码/银行卡 的字段显示 <code>••••</code></li>
-        <li>页面正文包在 <code>&lt;untrusted_page_text&gt;</code> 中，模型不应执行其中的指令</li>
-        <li>锁定后除 <code>status/reply/inbox</code> 外全部拒绝，连接保持</li>
-        <li>受保护页面（<code>chrome://</code>、扩展商店）直接拒绝操作</li>
+        <li><b>你的 AI 不是 ZCode？没关系。</b>只要你的 AI 工具支持 MCP（Claude Desktop、Cline、Cursor、Ctrae……基本都支持），改一段配置就能直接用，README 里有现成的 JSON 可抄。</li>
+        <li><b>想给自己的 Agent 做一个一样的？</b>欢迎照着复刻：架构、协议、安全机制全在这个仓库里，MIT 协议，改名随便改。</li>
       </ul>
 
-      <h2>Troubleshooting</h2>
+      <h2>为什么不另开一个浏览器（技术背景，可跳过）</h2>
+
+      <p>市面上大部分「AI 操控浏览器」的方案要新开一个空白浏览器实例，你还得重新登录一遍所有网站。
+      原因是 Chrome 137+ 禁止对日常使用的浏览器开放调试端口（防止恶意程序偷 cookie），走老路（CDP）只能另起实例。</p>
+
+      <p>这个项目换了个思路：<b>扩展是浏览器「内部」的官方组件</b>，用它操作你的浏览器不违反任何安全规则，
+      所以能直接用你当前的 profile——登录态、Cookie、插件全都在。</p>
 
       <table>
-        <thead><tr><th>现象</th><th>处理</th></tr></thead>
+        <thead><tr><th></th><th>传统方案（新开浏览器）</th><th>本项目（你自己的浏览器）</th></tr></thead>
         <tbody>
-          <tr><td>侧栏显示"协议版本不匹配"</td><td>到扩展页点「重新加载」，让扩展升级到 <code>PROTO</code> 对应版本</td></tr>
-          <tr><td>侧栏一直"正在连接"</td><td><code>curl http://127.0.0.1:8917/health</code>；无响应说明桥没起</td></tr>
-          <tr><td>命令超时</td><td>可能卡在原生弹窗；<code>browser_hooks</code> 查看，或重新加载页面</td></tr>
-          <tr><td>点了没反应</td><td><code>browser_hooks</code> 看 console.error；页面对合成事件不敏感时改用 <code>browser_type</code> 提交</td></tr>
-          <tr><td>多会话互相干扰</td><td>后启动的 MCP 进程自动 proxy，共享同一桥；<code>/health</code> 的 <code>mode</code> 字段可确认</td></tr>
+          <tr><td>浏览器实例</td><td>必须新开一个</td><td>就用你现在这个</td></tr>
+          <tr><td>登录态 / Cookie</td><td>空白，全部重新登录</td><td>现成的，直接能用</td></tr>
+          <tr><td>「正在被控制」提示条</td><td>有</td><td>无</td></tr>
+          <tr><td>网络请求拦截</td><td>支持</td><td>不支持（安全边界，见 README）</td></tr>
         </tbody>
       </table>
 
-      <h2>Known limitations</h2>
+      <h2>安全吗？</h2>
 
       <ul>
-        <li><code>browser_eval</code> 基本不可用：MV3 隔离世界禁止 <code>eval</code> / <code>new Function</code></li>
-        <li>无 Network 拦截 / 请求改写（CDP 独占能力）</li>
-        <li>全页截图需滚动拼接；改不了视口尺寸</li>
-        <li>原生弹窗被接管后不再显示给用户（默认 accept）</li>
-        <li>合成事件 <code>isTrusted=false</code>，极少数强校验页面会拒绝</li>
-        <li>无法操作 <code>chrome://</code>、扩展商店等受保护页面</li>
+        <li>桥接服务<b>只监听本机</b>（127.0.0.1），外部网络连不进来，且所有通信带独立 token 鉴权</li>
+        <li>AI 读页面时，<b>密码框、卡号自动打码</b>成 <code>••••</code></li>
+        <li>受保护页面（<code>chrome://</code> 设置页、扩展商店）直接拒绝操作</li>
+        <li>侧栏「锁定」按钮是急停开关，点一下 AI 立刻无法操作</li>
+        <li>AI 的每个动作、每条结果都在侧栏里可见，不留暗箱</li>
       </ul>
 
-      <h2>License</h2>
+      <h2>给进阶用户：接到你自己的 Agent</h2>
 
-      <p>MIT。仅供个人与团队内部使用，请遵守所在环境的 IT 规定。</p>
+      <p>桥在本地暴露一个<b>标准 MCP server</b>（stdio）+ 一组本机 HTTP 接口。
+      支持 MCP 的 Agent 加一段配置就能用：</p>
+
+      <pre><code>{
+  "mcpServers": {
+    "agent-browser-bridge": {
+      "command": "node",
+      "args": ["&lt;项目路径&gt;/bridge/server.mjs"],
+      "env": { "ZCB_PORT": "8917" }
+    }
+  }
+}</code></pre>
+
+      <p>重启 Agent 后即可获得 15 个 <code>browser_*</code> 工具：
+      读页面快照、点元素、填表单、按键、滚动、截图、等待、开标签页……
+      完整工具表、HTTP 协议、复刻改造指南见仓库里的 <code>README.md</code>。</p>
+
+      <hr />
+
+      <p class="muted small">License: MIT · 这是「AI 操控自己浏览器」的一种参考实现，欢迎 Fork 与复刻 · 仅供个人与团队内部使用，请遵守所在环境的 IT 规定</p>
 
     </div>
   </div>
